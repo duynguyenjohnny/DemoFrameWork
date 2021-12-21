@@ -23,9 +23,25 @@ public class LoginPage {
 
     WebDriver driver;
 
-    @FindBy(id="username")
+    @FindBy(id="login")
 
     WebElement Username;
+
+    @FindBy(id="username")
+
+    WebElement Username3;
+
+    @FindBy(id="password")
+
+    WebElement Password3;
+
+    @FindBy(xpath="//i[contains(text(),'Login')]")
+
+    WebElement login3;
+
+    @FindBy(xpath="//body/div[2]/div[1]/div[1]/a[1]")
+
+    WebElement logout3;
 
     @FindBy(id="password")
 
@@ -35,9 +51,13 @@ public class LoginPage {
 
     WebElement titleText;
 
-    @FindBy(xpath="//span[contains(text(),'Đăng nhập')]")
+    @FindBy(xpath="//button[contains(text(),'Log in')]")
 
     WebElement login;
+
+    @FindBy(xpath="//div[contains(text(),'Inventory')]")
+
+    WebElement inventory;
 
     public LoginPage(WebDriver driver){
 
@@ -72,6 +92,29 @@ public class LoginPage {
 
     }
 
+    //Set user name in textbox
+
+    public void setUserName3(String strUserName){
+
+        Username3.sendKeys(strUserName);
+    }
+
+    //Set password in password textbox
+
+    public void setPassword3(String strPassword){
+
+        Password3.sendKeys(strPassword);
+
+    }
+
+    //Click on login button
+
+    public void clickLogin3(){
+
+        login3.click();
+
+    }
+
     public void checkUI() throws InterruptedException {
         String sMethodName = new Object() {
         }.getClass().getEnclosingMethod().getName();
@@ -88,10 +131,10 @@ public class LoginPage {
 
     }
 
-    public void demoTest001() throws InterruptedException {
+    public void failedcased() throws InterruptedException {
 
-        WebDriverWait wait = new WebDriverWait(driver,5);
-        wait.until(ExpectedConditions.elementToBeClickable(login));
+        //WebDriverWait wait = new WebDriverWait(driver,5);
+        //wait.until(ExpectedConditions.elementToBeClickable(login));
         final SecuredPropertiesConfig config = new SecuredPropertiesConfig()
                 .withSecretFile(new File("./src/tests/loginpage/mysecret.key"))
                 .initDefault();
@@ -119,10 +162,10 @@ public class LoginPage {
         Assert.assertFalse(true,"Failed Case");
     }
 
-    public void demoTest002() throws InterruptedException {
+    public void loginWithValidInfo() throws InterruptedException {
 
-        WebDriverWait wait = new WebDriverWait(driver,5);
-        wait.until(ExpectedConditions.elementToBeClickable(login));
+        //WebDriverWait wait = new WebDriverWait(driver,5);
+        //wait.until(ExpectedConditions.elementToBeClickable(login));
         final SecuredPropertiesConfig config = new SecuredPropertiesConfig()
                 .withSecretFile(new File("./src/tests/loginpage/mysecret.key"))
                 .initDefault();
@@ -147,7 +190,42 @@ public class LoginPage {
         Thread.sleep(200);
         //Click Login button
         this.clickLogin();
-        Assert.assertTrue(login.isDisplayed(),"Passed Case");
+        WebDriverWait wait = new WebDriverWait(driver,10);
+        wait.until(ExpectedConditions.elementToBeClickable(inventory));
+        Assert.assertTrue(inventory.isDisplayed(),"Passed Case");
+    }
+
+    public void loginWithValidInfoYojee() throws InterruptedException {
+
+        //WebDriverWait wait = new WebDriverWait(driver,5);
+        //wait.until(ExpectedConditions.elementToBeClickable(login));
+        final SecuredPropertiesConfig config = new SecuredPropertiesConfig()
+                .withSecretFile(new File("./src/tests/loginpage/mysecret.key"))
+                .initDefault();
+        SecuredProperties.encryptNonEncryptedValues(config,
+                new File("./src/tests/loginpage/Login.properties"),
+                "Username3");
+        SecuredProperties.encryptNonEncryptedValues(config,
+                new File("./src/tests/loginpage/Login.properties"),
+                "Password3");
+        String Username = SecuredProperties.getSecretValue(config,
+                new File("./src/tests/loginpage/Login.properties"),
+                "Username3");
+        String Password = SecuredProperties.getSecretValue(config,
+                new File("./src/tests/loginpage/Login.properties"),
+                "Password3");
+
+        //Fill user name
+        this.setUserName3(Username);
+        Thread.sleep(200);
+        //Fill password
+        this.setPassword3(Password);
+        Thread.sleep(200);
+        //Click Login button
+        this.clickLogin3();
+        WebDriverWait wait = new WebDriverWait(driver,10);
+        wait.until(ExpectedConditions.elementToBeClickable(logout3));
+        Assert.assertTrue(logout3.isDisplayed(),"Passed Case");
     }
 
     public void loginToWeb(String strUsername, String strPassword) throws InterruptedException {

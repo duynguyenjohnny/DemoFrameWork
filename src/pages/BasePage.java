@@ -80,6 +80,7 @@ public abstract class BasePage {
                 wait = new WebDriverWait(driver, 600);
             } else if (browser.equalsIgnoreCase("chrome")) {
                 System.out.println(" Executing on CHROME");
+                ChromeOptions chromeOptions = null;
                 if (getOs() == OS.OS_WINDOWS) {
                     ChromeOptions options = new ChromeOptions();
                     options.addArguments("chrome.switches", "--disable-extensions");
@@ -92,7 +93,7 @@ public abstract class BasePage {
                     // driver = new ChromeDriver();
                 } else if (getOs() == OS.OS_LINUX) {
                     System.setProperty("webdriver.chrome.driver", "driver/chromedriver");
-                    ChromeOptions chromeOptions = new ChromeOptions();
+                    chromeOptions = new ChromeOptions();
                     chromeOptions.addArguments("--headless");
                     chromeOptions.addArguments("--no-sandbox");
                     chromeOptions.addArguments("chrome.switches", "--disable-extensions");
@@ -100,66 +101,73 @@ public abstract class BasePage {
                     chromeOptions.addArguments("disable-impl-side-painting");
                     driver = new ChromeDriver(chromeOptions);
                     wait = new WebDriverWait(driver, 600);
+                } else if (getOs() == OS.OS_MAC_OS_X) {
+                    System.setProperty("webdriver.chrome.driver", "driver/chromedriver");
+                    ChromeOptions chromeMACOptions = new ChromeOptions();
+                    chromeMACOptions.addArguments("chrome.switches", "--disable-extensions");
+                    chromeMACOptions.addArguments("disable-popup-blocking");
+                    chromeMACOptions.addArguments("disable-impl-side-painting");
+                    driver = new ChromeDriver(chromeMACOptions);
+                    wait = new WebDriverWait(driver, 600);
+
+                } else if (browser.equalsIgnoreCase("ie")) {
+                    System.out.println("Executing on IE");
+                    System.setProperty("webdriver.ie.driver",
+                            "driver/IEDriverServer64.exe");
+                    driver = new InternetExplorerDriver();
+                    wait = new WebDriverWait(driver, 600);
+
+                } else {
+                    throw new IllegalArgumentException(
+                            "The Browser Type is Undefined");
                 }
+                // prepare custom config
+                final SecuredPropertiesConfig config = new SecuredPropertiesConfig()
+                        .withSecretFile(new File("./src/tests/loginpage/mysecret.key"))
+                        .initDefault();
 
-            } else if (browser.equalsIgnoreCase("ie")) {
-                System.out.println("Executing on IE");
-                System.setProperty("webdriver.ie.driver",
-                        "driver/IEDriverServer64.exe");
-                driver = new InternetExplorerDriver();
-                wait = new WebDriverWait(driver, 600);
+                // auto-encrypt values in the property-file:
+                SecuredProperties.encryptNonEncryptedValues(config,
+                        new File("./src/tests/loginpage/Login.properties"), // The Property File
+                        "Yojee_Enviroment_QA"); // the property-key from "myConfiguration.properties"
 
-            } else {
-                throw new IllegalArgumentException(
-                        "The Browser Type is Undefined");
+                // read encrypted values from the property-file
+                String Yojee_Enviroment_QA = SecuredProperties.getSecretValue(config,
+                        new File("./src/tests/loginpage/Login.properties"), // The Property File
+                        "Yojee_Enviroment_QA"); // the property-key from "myConfiguration.properties"
+
+                String URL = Yojee_Enviroment_QA;
+                try {
+                    driver.navigate().to(URL);
+                } catch (WebDriverException e) {
+                    System.out.println("URL was not loaded");
+                }
+                test = extent.startTest(method.getName()).assignCategory(
+                        getClass().getSimpleName());
+                // driver.get(url);
+                driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+                driver.manage().deleteAllCookies();
+                driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.MINUTES);
+                driver.manage().window().maximize();
+                initControllers(driver);
+                initData();
             }
-            // prepare custom config
-            final SecuredPropertiesConfig config = new SecuredPropertiesConfig()
-                    .withSecretFile(new File("./src/tests/loginpage/mysecret.key"))
-                    .initDefault();
+            } catch(TimeoutException e){
+                System.out.println("Page load time out exception");
+                driver.navigate().refresh();
+                driver.quit();
+            } catch(UnreachableBrowserException e){
+                System.out.println("Unreacheable browser exception");
+                driver.navigate().refresh();
+                driver.quit();
 
-            // auto-encrypt values in the property-file:
-            SecuredProperties.encryptNonEncryptedValues(config,
-                    new File("./src/tests/loginpage/Login.properties"), // The Property File
-                    "Entribe_Enviroment_QA"); // the property-key from "myConfiguration.properties"
-
-            // read encrypted values from the property-file
-            String Entribe_Enviroment_QA = SecuredProperties.getSecretValue(config,
-                    new File("./src/tests/loginpage/Login.properties"), // The Property File
-                    "Entribe_Enviroment_QA"); // the property-key from "myConfiguration.properties"
-
-            String URL = Entribe_Enviroment_QA;
-            try {
-                driver.navigate().to(URL);
-            } catch (WebDriverException e) {
-                System.out.println("URL was not loaded");
+            } catch(NullPointerException e){
+                System.out.println("Unreacheable browser exception");
+                driver.navigate().refresh();
+                driver.quit();
             }
-            test = extent.startTest(method.getName()).assignCategory(
-                    getClass().getSimpleName());
-            // driver.get(url);
-            driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-            driver.manage().deleteAllCookies();
-            driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.MINUTES);
-            driver.manage().window().maximize();
-            initControllers(driver);
-            initData();
 
-        } catch (TimeoutException e) {
-            System.out.println("Page load time out exception");
-            driver.navigate().refresh();
-            driver.quit();
-        } catch (UnreachableBrowserException e) {
-            System.out.println("Unreacheable browser exception");
-            driver.navigate().refresh();
-            driver.quit();
-
-        } catch (NullPointerException e){
-            System.out.println("Unreacheable browser exception");
-            driver.navigate().refresh();
-            driver.quit();
         }
-
-    }
 
     private void setDriverSystemPath() {
         if (getOs() == OS.OS_WINDOWS) {
@@ -167,6 +175,10 @@ public abstract class BasePage {
                     "driver//geckodriver.exe");
         } else if (getOs() == OS.OS_LINUX) {
             System.setProperty("webdriver.gecko.driver", "driver/geckodriver");
+        }
+        else if (getOs() == OS.OS_MAC_OS_X) {
+            System.setProperty("webdriver.chrome.driver",
+                    System.getProperty("user.dir")+"/Chrome/chromedriver");
         }
         // Add another check when have a new OS
     }
